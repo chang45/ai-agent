@@ -110,12 +110,12 @@ def get_location_baidu(address: str) -> dict:
 
 
 def get_weather_qweather(lon_lat: str, unit: str = "celsius") -> dict:
-    """使用和风天气 API 查询实时天气"""
+    """使用和风天气 API 查询未来 7 天天气预报"""
     key_error = _missing_key_error(require_weather=True)
     if key_error:
         return key_error
 
-    url = "https://mn2mtfd4hd.re.qweatherapi.com/v7/weather/now"
+    url = "https://mn2mtfd4hd.re.qweatherapi.com/v7/weather/7d"
     params = {"key": QWEATHER_KEY, "location": lon_lat}
 
     try:
@@ -125,23 +125,36 @@ def get_weather_qweather(lon_lat: str, unit: str = "celsius") -> dict:
         # print("和风返回：", res)
 
         if res.get("code") == "200":
-            now = res["now"]
-            temp = now["temp"]
-            feels_like = now["feelsLike"]
             unit_symbol = "°C"
+            daily_forecast = []
 
-            if unit == "fahrenheit":
-                temp = str(round(float(temp) * 9 / 5 + 32, 1))
-                feels_like = str(round(float(feels_like) * 9 / 5 + 32, 1))
-                unit_symbol = "°F"
+            for day in res.get("daily", []):
+                temp_min = day["tempMin"]
+                temp_max = day["tempMax"]
+                if unit == "fahrenheit":
+                    temp_min = str(round(float(temp_min) * 9 / 5 + 32, 1))
+                    temp_max = str(round(float(temp_max) * 9 / 5 + 32, 1))
+                    unit_symbol = "°F"
+
+                daily_forecast.append(
+                    {
+                        "date": day["fxDate"],
+                        "weather_day": day["textDay"],
+                        "weather_night": day["textNight"],
+                        "temp_min": f"{temp_min}{unit_symbol}",
+                        "temp_max": f"{temp_max}{unit_symbol}",
+                        "humidity": f"{day['humidity']}%",
+                        "wind_day": f"{day['windDirDay']} {day['windScaleDay']}级",
+                        "wind_night": f"{day['windDirNight']} {day['windScaleNight']}级",
+                        "sunrise": day.get("sunrise"),
+                        "sunset": day.get("sunset"),
+                    }
+                )
 
             return {
-                "weather": now["text"],
-                "temp": f"{temp}{unit_symbol}",
-                "feels_like": f"{feels_like}{unit_symbol}",
-                "humidity": f"{now['humidity']}%",
-                "wind": f"{now['windDir']} {now['windScale']}级",
-                "update_time": now["obsTime"],
+                "forecast_days": len(daily_forecast),
+                "daily": daily_forecast,
+                "update_time": res.get("updateTime"),
             }
 
         error_msgs = {

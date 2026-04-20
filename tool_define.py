@@ -3,7 +3,7 @@ TOOLS = [
         "type": "function",
         "function": {
             "name": "get_weather",
-            "description": "查询指定城市的当前天气信息，包括温度、天气状况、湿度等",
+            "description": "查询指定城市未来 7 天的天气预报，包括每日天气状况、最高温、最低温、湿度和风力等",
             "parameters": {
                 "type": "object",
                 "properties": {
